@@ -26,16 +26,9 @@
 1. `git clone https://github.com/PresentJay/Adversarial-Patch-for-OpenPose.git`
 2. `cd ./Adversarial-Patch-for-OpenPose`
 
-### [Using Virtualenv]
-
-1. `pip install virtualenv`
-2. `virtualenv venv`
-3. `. venv/scripts/activate`
-
-#### then, {venv} environment is activated.
-
-4. `pip install -r requirements.txt`
-5. `python main.py`
+### [Run Anaconda shell that has conda configure]
+3. `pip install -r requirements.txt`
+4. `python main.py`
 
 <br>
 

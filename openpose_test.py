@@ -13,23 +13,25 @@ POSE_PAIRS = [ ["Head", "Neck"], ["Neck", "RShoulder"], ["RShoulder", "RElbow"],
                 ["RKnee", "RAnkle"], ["Chest", "LHip"], ["LHip", "LKnee"], ["LKnee", "LAnkle"] ]
 
 # 각 파일 path
-protoFile = "pose_deploy_linevec_faster_4_stages.prototxt"
-weightsFile = "pose_iter_160000.caffemodel"
+protoFile = "d:/models/openpose_model/pose_deploy_linevec_faster_4_stages.prototxt"
+weightsFile = "d:/models/openpose_model/pose_iter_160000.caffemodel"
 
-#cap = cv2.VideoCapture('S08.mp4')
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture('data/video/test.mp4')
+# cap = cv2.VideoCapture(0)
 
 # 동영상의 사이즈 측정
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-print("size: {0} x {1}".format(width, height))
+print(f"size: {width} x {height}")
 
 fps = cap.get(cv2.CAP_PROP_FPS) #프레임 수
-print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
+print(f"Frames per second using video.get(cv2.CAP_PROP_FPS) : {format(fps)}")
 
 #파일 쓰기
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('output.mp4', fourcc, fps, (int(width),int(height)))
+out = cv2.VideoWriter('results/openpose_result/original/output.mp4', fourcc, fps, (int(width),int(height)))
+
+frame_cnt = 0
 
 while True:
     ret, fram = cap.read()
@@ -37,6 +39,8 @@ while True:
     if ret:
         # 위의 path에 있는 network 불러오기
         net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
+
+        print('model has loaded.')
 
         # 이미지 읽어오기
         image = fram
@@ -47,6 +51,8 @@ while True:
         # network에 넣기위해 전처리
         inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (imageWidth, imageHeight), (0, 0, 0), swapRB=False, crop=False)
         
+        print('frame has loaded.')
+        
         # network에 넣어주기
         net.setInput(inpBlob)
 
@@ -54,10 +60,10 @@ while True:
         output = net.forward()
 
         # output.shape[0] = 이미지 ID, [1] = 출력 맵의 높이, [2] = 너비
-        H = output.shape[2]
-        W = output.shape[3]
-        print("이미지 ID : ", len(output[0]), ", H : ", output.shape[2], ", W : ",output.shape[3]) # 이미지 ID
-
+        H, W = output.shape[2], output.shape[3]
+        frame_cnt+=1
+        print(f"frame no={frame_cnt}")
+        
         # 키포인트 검출시 이미지에 그려줌
         points = []
         for i in range(0,15):
@@ -76,9 +82,10 @@ while True:
                 cv2.circle(image, (int(x), int(y)), 3, (0, 255, 255), thickness=-1, lineType=cv2.FILLED)       # circle(그릴곳, 원의 중심, 반지름, 색)
                 cv2.putText(image, "{}".format(i), (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, lineType=cv2.LINE_AA)
                 points.append((int(x), int(y)))
+                print(f"point {i} : ({x},{y}), ", end="")
             else :
                 points.append(None)
-
+        print("")
         # 이미지 복사
         imageCopy = image
 
@@ -93,13 +100,17 @@ while True:
             if points[partA] and points[partB]:
                 cv2.line(imageCopy, points[partA], points[partB], (0, 255, 0), 2)
 
+
         #out.write(imageCopy) #gray는 저장 안됨 - 이진화 된 영상이라서 그런 듯
         cv2.imshow("Output-Keypoints",imageCopy)
         #cv2.waitKey(0)
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+            
+            
+        #     break
     else:
+        print("fin.")
         break
 
 cap.release()
