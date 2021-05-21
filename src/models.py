@@ -1,4 +1,5 @@
 RESNET50 = 'resnet50'
+INCEPTION_V3 = 'inception_v3' 
 
 def getModels_fromTV(name):
     from torchvision import models

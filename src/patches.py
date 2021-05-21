@@ -138,6 +138,6 @@ def train_patch(args, train_loader, test_loader, patch, model):
             best_patch_epoch = epoch
             plt.imshow(np.clip(np.transpose(patch, (1, 2, 0)) * std + mean, 0, 1))
             
-            plt.savefig(f"results/{directoryName}/best/{best_patch_epoch}-{100*best_patch_success_rate}.png")
+            plt.savefig(f"results/{directoryName}/best/patch.png")
 
     print("The best patch is found at epoch {} with success rate {}% on testset".format(best_patch_epoch, 100 * best_patch_success_rate))
