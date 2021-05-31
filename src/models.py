@@ -1,4 +1,5 @@
 RESNET50 = 'resnet50'
+VGG19 = 'vgg19'
 INCEPTION_V3 = 'inception_v3' 
 
 def getModels_fromTV(name):

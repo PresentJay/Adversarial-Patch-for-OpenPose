@@ -3,7 +3,7 @@ import argparse
 def init_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=1, help="batch size")
-    parser.add_argument('--num_workers', type=int, default=2, help="num_workers")
+    parser.add_argument('--num_workers', type=int, default=4, help="num_workers")
     parser.add_argument('--total_num', type=int, default=1000, help="number of dataset images")
     parser.add_argument('--train_size', type=int, default=800, help="number of training images")
     parser.add_argument('--test_size', type=int, default=200, help="number of test images")

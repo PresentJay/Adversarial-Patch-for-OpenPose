@@ -7,8 +7,8 @@ import matplotlib
 
 from random import randint
 
-protoFile = "data/models/apose_deploy_linevec.prototxt"
-weightsFile = "dadta/models/pose_iter_440000.caffemodel"
+protoFile = "data/models/pose_deploy_linevec_faster_4_stages.prototxt"
+weightsFile = "data/models/pose_iter_440000.caffemodel"
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 
 nPoints = 18
@@ -199,11 +199,14 @@ while(cap.isOpened()):
         inHeight = 368
         inWidth = int((inHeight/frameHeight)*frameWidth)
 #         frame = cv2.resize(frame, (inHeight, inWidth), cv2.INTER_AREA)   
+
         # process the frame here
         inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
         net.setInput(inpBlob)
+        
         output = net.forward()
 #         print(type(output))
+
         detected_keypoints = []
         keypoints_list = np.zeros((0,3))
         keypoint_id = 0

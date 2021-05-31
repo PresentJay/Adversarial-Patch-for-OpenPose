@@ -13,7 +13,7 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = args.GPU
     
     # set the model
-    model = models.getModels_fromTV(models.INCEPTION_V3)
+    model = models.getModels_fromTV(models.VGG19)
     
     # load the dataset
     train_loader, test_loader = datasets.dataloader(args)

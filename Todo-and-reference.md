@@ -6,3 +6,10 @@
 
 - EOT 관련 Transformation in Pytorch Reference Blog
   - https://www.analyticsvidhya.com/blog/2021/04/10-pytorch-transformations-you-need-to-know/
+
+
+-  COCO Keypoint Dataset 사용 관련
+
+  - https://towardsdatascience.com/how-to-analyze-the-coco-dataset-for-pose-estimation-7296e2ffb12e
+
+  - https://glee1228.tistory.com/7 

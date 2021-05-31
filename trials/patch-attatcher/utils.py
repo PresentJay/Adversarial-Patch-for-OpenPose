@@ -134,6 +134,7 @@ def init_patch_circle(image_size, patch_size):
         index = x**2 + y**2 <= radius**2
         a[cy-radius:cy+radius, cx-radius:cx+radius][index] = np.random.rand()
         idx = np.flatnonzero((a == 0).all((1)))
+        
         a = np.delete(a, idx, axis=0)
         patch[0][i] = np.delete(a, idx, axis=1)
     return patch, patch.shape
