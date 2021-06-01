@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 import time, os
 
 from torch.autograd import Variable
@@ -92,6 +93,9 @@ def patch_attack(image, applied_patch, mask, model, args):
         output = model(perturbated_image)
         target_probability = torch.nn.functional.softmax(output, dim=1).data[0][args.target]
         
+        if count%100 ==0 :
+            print(f'attack {count} : {target_probability}')
+    
     perturbated_image = perturbated_image.cpu().numpy()
     applied_patch = applied_patch.cpu().numpy()
     return perturbated_image, applied_patch
@@ -106,6 +110,7 @@ def train_patch(args, train_loader, test_loader, patch, model):
     
     # Generate the patch
     for epoch in range(args.epochs):
+        print(f'{epoch} epoch : patch start . . .')
         train_total, train_actual_total, train_success = 0, 0, 0
         for (image, label) in train_loader:
             train_total += label.shape[0]
@@ -128,6 +133,7 @@ def train_patch(args, train_loader, test_loader, patch, model):
         mean, std = IMAGENET_MEAN, IMAGENET_STD
         
         plt.imshow(np.clip(np.transpose(patch, (1, 2, 0)) * std + mean, 0, 1))
+        plt.axis('off')
         plt.savefig(f"results/{directoryName}/candidate/{epoch}.png")
         print("Epoch:{} Patch attack success rate on trainset: {:.3f}%".format(epoch, 100 * train_success / train_actual_total))
         test_success_rate = test_patch(args, patch, test_loader, model)
@@ -137,7 +143,7 @@ def train_patch(args, train_loader, test_loader, patch, model):
             best_patch_success_rate = test_success_rate
             best_patch_epoch = epoch
             plt.imshow(np.clip(np.transpose(patch, (1, 2, 0)) * std + mean, 0, 1))
-            
+            plt.axis('off')
             plt.savefig(f"results/{directoryName}/best/patch.png")
 
     print("The best patch is found at epoch {} with success rate {}% on testset".format(best_patch_epoch, 100 * best_patch_success_rate))

@@ -197,7 +197,7 @@ def predict_Img(src = TARGET):
         probMap = cv2.resize(probMap, (frame.shape[1], frame.shape[0]))
         
         keypoints = getKeypoints(probMap, threshold)
-        # print("Keypoints - {} : {}".format(KEYPOINT_MAP[part], keypoints))
+        print("Keypoints - {} : {}".format(KEYPOINT_MAP[part], keypoints))
         keypoints_with_id = []
         for i in range(len(keypoints)):
             keypoints_with_id.append(keypoints[i] + (keypoint_id,))

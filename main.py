@@ -14,9 +14,11 @@ if __name__ == '__main__':
     
     # set the model
     model = models.getModels_fromTV(models.VGG19)
+    print(f'attack model = {model}')
     
     # load the dataset
     train_loader, test_loader = datasets.dataloader(args)
+    print('dataset is loaded. . .')
 
     # measure the accuracy about dataset
     trainset_acc, test_acc = networks.test(model, train_loader), networks.test(model, test_loader)

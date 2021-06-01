@@ -15,14 +15,14 @@ def dataloader(args):
     
     # Setup the transformation
     train_transforms = transforms.Compose([
-        transforms.RandomResizedCrop(224),
+        transforms.RandomResizedCrop(args.image_width),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
     ])
 
     test_transforms = transforms.Compose([
-        transforms.Resize(size=(224, 224)),
+        transforms.Resize(size=(args.image_width, args.image_height)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
@@ -34,7 +34,7 @@ def dataloader(args):
     test_index = index[args.train_size: (args.train_size + args.test_size)]
 
     # train_dataset = ImageFolder(root=args.data_dir, transform=train_transforms)
-    # test_dataset = ImageFolder(root=args.data_dir, transform=test_transforms)
+    # val_dataset = ImageFolder(root=args.data_dir, transform=test_transforms)
     
     train_dataset = ImageNet(root=ROOT, split='train', transform=train_transforms)
     val_dataset = ImageNet(root=ROOT, split='val', transform=test_transforms)

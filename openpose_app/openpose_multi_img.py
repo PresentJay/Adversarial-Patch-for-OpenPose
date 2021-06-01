@@ -7,8 +7,8 @@ import matplotlib
 
 from random import randint
 
-protoFile = "pose_deploy_linevec.prototxt"
-weightsFile = "pose_iter_440000.caffemodel"
+protoFile = "data/models/pose_deploy_linevec.prototxt"
+weightsFile = "data/models/pose_iter_440000.caffemodel"
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 
 nPoints = 18
@@ -165,7 +165,7 @@ def getPersonwiseKeypoints(valid_pairs, invalid_pairs):
     return personwiseKeypoints
 
 # capture video
-video_path="patch_person.jpg"
+video_path="data/Image/test.jpg"
 img = cv2.imread(video_path)
 
 height, width, channels = img.shape
