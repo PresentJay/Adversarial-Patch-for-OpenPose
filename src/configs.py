@@ -1,4 +1,7 @@
 import argparse
+import time
+import os.makedirs
+import matplotlib.pyplot as plt
 
 def init_args():
     parser = argparse.ArgumentParser()
@@ -8,6 +11,7 @@ def init_args():
     parser.add_argument('--total_num', type=int, default=1000, help="number of dataset images")
     parser.add_argument('--train_size', type=int, default=800, help="number of training images")
     parser.add_argument('--test_size', type=int, default=200, help="number of test images")
+    assert parser.train_size + parser.test_size <= parser.total_num, "train_size + test_size must be same or lower than Total dataset size"
     
     parser.add_argument('--noise_percentage', type=float, default=0.1, help="percentage of the patch size compared with the image size")
     parser.add_argument('--max_iteration', type=int, default=1000, help="max number of iterations to find adversarial example")
@@ -29,3 +33,17 @@ def init_args():
     parser.add_argument('--image_size', type=int, default=244, help='the height / width of the input image to network (basically 244, inception_v3 is 299')
     parser.add_argument('--netClassifier', default='vgg19', help="The target classifier")
     return parser.parse_args()
+
+
+def get_current_time():
+    now = time.localtime()
+    return f'{now.tm_year}-{now.tm_mon}-{now.tm_mday}_{now.tm_hour}-{now.tm_min}-{now.tm_sec}'
+
+def init_directories(directoryName):
+
+    try:
+        os.makedirs(f'results/{directoryName}/candidate', exist_ok=True)
+        os.makedirs(f'results/{directoryName}/best', exist_ok=True)
+    
+    except OSError:
+        pass

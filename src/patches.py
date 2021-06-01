@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
 import time, os
 
+from src import configs
 from torch.autograd import Variable
 from src.datasets import IMAGENET_MEAN, IMAGENET_STD
 import torch
@@ -102,11 +102,10 @@ def patch_attack(image, applied_patch, mask, model, args):
 
 
 def train_patch(args, train_loader, test_loader, patch, model):
-    best_patch_epoch, best_patch_success_rate = 0, 0
-    now = time.localtime()
-    directoryName = f'{now.tm_year}-{now.tm_mon}-{now.tm_mday}_{now.tm_hour}-{now.tm_min}-{now.tm_sec}'
-    os.makedirs(f'results/{directoryName}/candidate', exist_ok=True)
-    os.makedirs(f'results/{directoryName}/best', exist_ok=True)
+    best_patch_epoch, best_patch_success_rate = 0.0, 0.0
+    
+    directoryName = configs.get_current_time()
+    configs.init_directories(directoryName)
     
     # Generate the patch
     for epoch in range(args.epochs):
