@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time, os
 
 from src import configs
 from torch.autograd import Variable
@@ -45,8 +44,8 @@ def test_patch(args, patch, test_loader, model):
         assert image.shape[0] == 1, 'Only one picture should be loaded each time.'
         image = image.cuda()
         label = label.cuda()
-        output = model(image)
-        _, predicted = torch.max(output.data, 1)
+        prediction = model(image)
+        _, predicted = torch.max(prediction.data, 1)
         if predicted[0] != label and predicted[0].data.cpu().numpy() != args.target:
             test_actual_total += 1
             applied_patch, mask, x_location, y_location = generate_mask(patch, args)
@@ -54,8 +53,8 @@ def test_patch(args, patch, test_loader, model):
             mask = torch.from_numpy(mask)
             perturbated_image = torch.mul(mask.type(torch.FloatTensor), applied_patch.type(torch.FloatTensor)) + torch.mul((1 - mask.type(torch.FloatTensor)), image.type(torch.FloatTensor))
             perturbated_image = perturbated_image.cuda()
-            output = model(perturbated_image)
-            _, predicted = torch.max(output.data, 1)
+            prediction = model(perturbated_image)
+            _, predicted = torch.max(prediction.data, 1)
             if predicted[0].data.cpu().numpy() == args.target:
                 test_success += 1
         elif predicted[0] == label and predicted[0].data.cpu().numpy() == args.target:
@@ -79,20 +78,20 @@ def patch_attack(image, applied_patch, mask, model, args):
         perturbated_image = Variable(perturbated_image.data, requires_grad=True)
         per_image = perturbated_image
         per_image = per_image.cuda()
-        output = model(per_image)
-        target_log_softmax = torch.nn.functional.log_softmax(output, dim=1)[0][args.target]
+        prediction = model(per_image)
+        target_log_softmax = torch.nn.functional.log_softmax(prediction, dim=1)[0][args.target]
         target_log_softmax.backward()
         patch_grad = perturbated_image.grad.clone().cpu()
         perturbated_image.grad.data.zero_()
         applied_patch = args.lr * patch_grad + applied_patch.type(torch.FloatTensor)
-        applied_patch = torch.clamp(applied_patch, min=-3, max=3)
+        applied_patch = torch.clamp(applied_patch, min=0, max=1)
         
         # Test the patch
         perturbated_image = torch.mul(mask.type(torch.FloatTensor), applied_patch.type(torch.FloatTensor)) + torch.mul((1-mask.type(torch.FloatTensor)), image.type(torch.FloatTensor))
-        perturbated_image = torch.clamp(perturbated_image, min=-3, max=3)
+        perturbated_image = torch.clamp(perturbated_image, min=0, max=1)
         perturbated_image = perturbated_image.cuda()
-        output = model(perturbated_image)
-        target_probability = torch.nn.functional.softmax(output, dim=1).data[0][args.target]
+        prediction = model(perturbated_image)
+        target_probability = torch.nn.functional.softmax(prediction, dim=1).data[0][args.target]
         
         if count%100 == 0 :
             print(f'attack {count} : {target_probability}')
@@ -115,17 +114,20 @@ def train_patch(args, train_loader, test_loader, patch, model):
         for (image, label) in train_loader:
             train_total += label.shape[0]
             assert image.shape[0] == 1, 'Only one picture should be loaded each time.'
-            image = image.cuda()
-            label = label.cuda()
-            output = model(image)
-            _, predicted = torch.max(output.data, 1)
+            if args.cuda:
+                image = image.cuda()
+                label = label.cuda()
+            data, labels = Variable(data), Variable(label)
+            
+            prediction = model(image)
+            _, predicted = torch.max(prediction.data, 1)
             if predicted[0] != label and predicted[0].data.cpu().numpy() != args.target:
                 train_actual_total += 1
                 applied_patch, mask, x_location, y_location = generate_mask(patch, args)
                 perturbated_image, applied_patch = patch_attack(image, applied_patch, mask, model, args)
                 perturbated_image = torch.from_numpy(perturbated_image).cuda()
-                output = model(perturbated_image)
-                _, predicted = torch.max(output.data, 1)
+                prediction = model(perturbated_image)
+                _, predicted = torch.max(prediction.data, 1)
                 if predicted[0].data.cpu().numpy() == args.target:
                     train_success += 1
                 patch = applied_patch[0][:, x_location:x_location + patch.shape[1], y_location:y_location + patch.shape[2]]

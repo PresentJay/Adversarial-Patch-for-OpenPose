@@ -2,7 +2,7 @@ import torch
 
 # Test the model on clean dataset
 def test(model, dataloader):
-    model.eval()
+    print(model.training)
     correct, total, loss, count = 0, 0, 0, 1
     with torch.no_grad():
         for (images, labels) in dataloader:

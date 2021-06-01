@@ -13,8 +13,9 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = args.GPU
     
     # set the model
-    model = models.getModels_fromTV(args.netClassifier)
-    print(f'attack model = {model.__class__}')
+    global netClassifier
+    netClassifier = models.getModels_fromTV(args.netClassifier)
+    print(f'attack model = {netClassifier.__class__}')
     
     # load the dataset
     # TODO: apply statusbar
@@ -23,7 +24,7 @@ if __name__ == '__main__':
     print('dataset is loaded. . . complete')
 
     # measure the accuracy about dataset
-    trainset_acc, test_acc = networks.test(model, train_loader), networks.test(model, test_loader)
+    trainset_acc, test_acc = networks.test(netClassifier, train_loader), networks.test(netClassifier, test_loader)
     print(f'Accuracy of the model on clean trainset and testset is {trainset_acc}% and {test_acc}%')
 
     # initialize patch
@@ -31,6 +32,6 @@ if __name__ == '__main__':
     
     # TODO: apply statusbar
     # train patch
-    patches.train_patch(args, train_loader, test_loader, patch, model)
+    patches.train_patch(args, train_loader, test_loader, patch, netClassifier)
     
     
