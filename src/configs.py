@@ -24,7 +24,7 @@ def init_args():
     parser.add_argument('--patch_size', type=float, default=0.5, help='patch size. E.g. 0.05 ~= 5% of image ')
     parser.add_argument('--mask_type', type=str, default='rectangle', help="type of the mask")
     
-    parser.add_argument('--data_dir', type=str, default='data/ImageNet', help="dir of the dataset")
+    parser.add_argument('--data_dir', type=str, default='D:\datasets\ImageNet', help="dir of the dataset")
     parser.add_argument('--outf', default='./logs', help='folder to output images and model checkpoints')
  
     parser.add_argument('--manualSeed', type=int, default=1338, help='manual seed')
@@ -36,6 +36,10 @@ def init_args():
     
     args = parser.parse_args()
     assert args.train_size + args.test_size <= args.total_num, "train_size + test_size must be same or lower than Total dataset size"
+    
+    args.mean = (0.485, 0.456, 0.406)
+    args.std = (0.229, 0.224, 0.225)
+    
     return args
     
 

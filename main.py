@@ -17,16 +17,19 @@ if __name__ == '__main__':
     print(f'attack model = {model.__class__}')
     
     # load the dataset
-    train_loader, test_loader = datasets.dataloader(args)
-    print('dataset is loaded. . .')
+    # TODO: apply statusbar
+    print("prepare dataset from =>", args.data_dir)
+    train_loader, test_loader = datasets.load_data(args)
+    print('dataset is loaded. . . complete')
 
     # measure the accuracy about dataset
     trainset_acc, test_acc = networks.test(model, train_loader), networks.test(model, test_loader)
     print(f'Accuracy of the model on clean trainset and testset is {trainset_acc}% and {test_acc}%')
-    
+
     # initialize patch
     patch = patches.init_patch(args)
     
+    # TODO: apply statusbar
     # train patch
     patches.train_patch(args, train_loader, test_loader, patch, model)
     

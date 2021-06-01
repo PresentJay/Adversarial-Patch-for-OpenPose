@@ -5,39 +5,35 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 import numpy as np
 
-IMAGENET_MEAN = (0.485, 0.456, 0.406)
-IMAGENET_STD = (0.229, 0.224, 0.225)
-
-ROOT = 'D:\datasets\ImageNet'
-
 # Load the datasets
-def dataloader(args):
+def load_data(args):
     
     # Setup the transformation
     train_transforms = transforms.Compose([
         transforms.RandomResizedCrop(args.image_size),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+        transforms.Normalize(args.mean, args.std)
     ])
 
     test_transforms = transforms.Compose([
         transforms.Resize((args.image_size, args.image_size)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+        transforms.Normalize(args.mean, args.std)
     ])
 
+    # TODO: set seed (in configs.py)
     index = np.arange(args.total_num)
     np.random.shuffle(index)
     train_index = index[:args.train_size]
-    test_index = index[args.train_size: (args.train_size + args.test_size)]
+    test_index = index[args.train_size:(args.train_size + args.test_size)]
 
     # train_dataset = ImageFolder(root=args.data_dir, transform=train_transforms)
     # val_dataset = ImageFolder(root=args.data_dir, transform=test_transforms)
     
-    train_dataset = ImageNet(root=ROOT, split='train', transform=train_transforms)
-    val_dataset = ImageNet(root=ROOT, split='val', transform=test_transforms)
+    train_dataset = ImageNet(root=args.data_dir, split='train', transform=train_transforms)
+    val_dataset = ImageNet(root=args.data_dir, split='val', transform=test_transforms)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, sampler=SubsetRandomSampler(train_index), num_workers=args.num_workers, pin_memory=True, shuffle=False)
     test_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, sampler=SubsetRandomSampler(test_index), num_workers=args.num_workers, pin_memory=True, shuffle=False)

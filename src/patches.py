@@ -4,7 +4,6 @@ import time, os
 
 from src import configs
 from torch.autograd import Variable
-from src.datasets import IMAGENET_MEAN, IMAGENET_STD
 import torch
 
 # Initialize the patch
@@ -131,9 +130,8 @@ def train_patch(args, train_loader, test_loader, patch, model):
                     train_success += 1
                 patch = applied_patch[0][:, x_location:x_location + patch.shape[1], y_location:y_location + patch.shape[2]]
         
-        mean, std = IMAGENET_MEAN, IMAGENET_STD
         
-        plt.imshow(np.clip(np.transpose(patch, (1, 2, 0)) * std + mean, 0, 1))
+        plt.imshow(np.clip(np.transpose(patch, (1, 2, 0)) * args.std + args.mean, 0, 1))
         plt.axis('off')
         plt.savefig(f"results/{directoryName}/candidate/{epoch}.png")
         print("Epoch:{} Patch attack success rate on trainset: {:.3f}%".format(epoch, 100 * train_success / train_actual_total))
@@ -143,7 +141,7 @@ def train_patch(args, train_loader, test_loader, patch, model):
         if test_success_rate > best_patch_success_rate:
             best_patch_success_rate = test_success_rate
             best_patch_epoch = epoch
-            plt.imshow(np.clip(np.transpose(patch, (1, 2, 0)) * std + mean, 0, 1))
+            plt.imshow(np.clip(np.transpose(patch, (1, 2, 0)) * args.std + args.mean, 0, 1))
             plt.axis('off')
             plt.savefig(f"results/{directoryName}/best/patch.png")
 
