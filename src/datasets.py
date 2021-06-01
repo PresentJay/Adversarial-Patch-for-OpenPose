@@ -15,14 +15,14 @@ def dataloader(args):
     
     # Setup the transformation
     train_transforms = transforms.Compose([
-        transforms.RandomResizedCrop(args.image_width),
+        transforms.RandomResizedCrop(args.image_size),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
     ])
 
     test_transforms = transforms.Compose([
-        transforms.Resize(size=(args.image_width, args.image_height)),
+        transforms.Resize((args.image_size, args.image_size)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)

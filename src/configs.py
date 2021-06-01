@@ -1,6 +1,7 @@
 import argparse
 import time
-import os.makedirs
+import torch
+import os
 import matplotlib.pyplot as plt
 
 def init_args():
@@ -11,7 +12,6 @@ def init_args():
     parser.add_argument('--total_num', type=int, default=1000, help="number of dataset images")
     parser.add_argument('--train_size', type=int, default=800, help="number of training images")
     parser.add_argument('--test_size', type=int, default=200, help="number of test images")
-    assert parser.train_size + parser.test_size <= parser.total_num, "train_size + test_size must be same or lower than Total dataset size"
     
     parser.add_argument('--noise_percentage', type=float, default=0.1, help="percentage of the patch size compared with the image size")
     parser.add_argument('--max_iteration', type=int, default=1000, help="max number of iterations to find adversarial example")
@@ -32,7 +32,11 @@ def init_args():
     
     parser.add_argument('--image_size', type=int, default=244, help='the height / width of the input image to network (basically 244, inception_v3 is 299')
     parser.add_argument('--netClassifier', default='vgg19', help="The target classifier")
-    return parser.parse_args()
+    
+    args = parser.parse_args()
+    assert args.train_size + args.test_size <= args.total_num, "train_size + test_size must be same or lower than Total dataset size"
+    return args
+    
 
 
 def get_current_time():
@@ -47,3 +51,13 @@ def init_directories(directoryName):
     
     except OSError:
         pass
+    
+    
+def set_randomness(random_seed):
+    torch.manual_seed(random_seed)
+    torch.cuda.manual_seed(random_seed)
+    torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(random_seed)
+    random.seed(random_seed)

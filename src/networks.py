@@ -13,7 +13,9 @@ def test(model, dataloader):
             total += labels.shape[0]
             correct += (predicted == labels).sum().item()
             
-            if count%1000 == 0:
-                print(f'{count} of image is loaded. . .')
+            if count % 1000 == 0:
+                print(f'{count} of test image is loaded. . .')
+            
             count+=1
+            
     return (correct / total) * 100

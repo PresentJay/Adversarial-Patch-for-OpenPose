@@ -10,14 +10,14 @@ import torch
 # Initialize the patch
 def init_patch(args):
     if args.patch_type == 'rectangle':
-        mask_length = int((args.noise_percentage * args.image_width * args.image_height)**0.5)
-        patch = np.random.rand(args.image_channel, mask_length, mask_length)
+        mask_length = int((args.noise_percentage * args.image_size * args.image_size)**0.5)
+        patch = np.random.rand(3, mask_length, mask_length)
         return patch
 
 
 # Generate the mask and apply the patch
 def generate_mask(patch, args):
-    applied_patch = np.zeros((args.image_channel, args.image_width, args.image_height))
+    applied_patch = np.zeros((3, args.image_size, args.image_size))
     
     if args.mask_type == 'rectangle':
         
@@ -27,8 +27,8 @@ def generate_mask(patch, args):
             patch[i] = np.rot90(patch[i], rotation_angle)  # The actual rotation angle is rotation_angle * 90
         
         # patch location
-        x_location = np.random.randint(low=0, high=args.image_width-patch.shape[1])
-        y_location = np.random.randint(low=0, high=args.image_height-patch.shape[2])
+        x_location = np.random.randint(low=0, high=args.image_size-patch.shape[1])
+        y_location = np.random.randint(low=0, high=args.image_size-patch.shape[2])
         for i in range(patch.shape[0]):
             applied_patch[:, x_location:x_location + patch.shape[1], y_location:y_location + patch.shape[2]] = patch
     
@@ -59,6 +59,8 @@ def test_patch(args, patch, test_loader, model):
             _, predicted = torch.max(output.data, 1)
             if predicted[0].data.cpu().numpy() == args.target:
                 test_success += 1
+        elif predicted[0] == label and predicted[0].data.cpu().numpy() == args.target:
+            print(f'{test_total} : {label} == {predicted[0]}')
     return test_success / test_actual_total
 
 
@@ -93,7 +95,7 @@ def patch_attack(image, applied_patch, mask, model, args):
         output = model(perturbated_image)
         target_probability = torch.nn.functional.softmax(output, dim=1).data[0][args.target]
         
-        if count%100 ==0 :
+        if count%100 == 0 :
             print(f'attack {count} : {target_probability}')
     
     perturbated_image = perturbated_image.cpu().numpy()
