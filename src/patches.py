@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 from src import configs, models
 from utils import images, times
@@ -7,12 +8,75 @@ from torch.autograd import Variable
 import torch
 import torch.nn.functional as F
 
+
 # Initialize the patch
 def init_patch(args):
     if args.patch_shape == 'rectangle':
         mask_length = int((args.noise_percentage * args.image_size * args.image_size)**0.5)
         patch = np.random.rand(3, mask_length, mask_length)
         return patch
+    
+
+def init_patch_square(image_size, patch_size):
+    # get mask
+    image_size = image_size**2
+    noise_size = image_size*patch_size
+    noise_dim = int(noise_size**(0.5))
+    patch = np.random.rand(1,3,noise_dim,noise_dim)
+    return patch, patch.shape
+
+
+def square_transform(patch, data_shape, patch_shape, image_size):
+    # get dummy image 
+    x = np.zeros(data_shape)
+    
+    # get shape
+    m_size = patch_shape[-1]
+    
+    for i in range(x.shape[0]):
+
+        # random rotation
+        rot = np.random.choice(4)
+        for j in range(patch[i].shape[0]):
+            patch[i][j] = np.rot90(patch[i][j], rot)
+        
+        # random location
+        random_x = np.random.choice(image_size)
+        if random_x + m_size > x.shape[-1]:
+            while random_x + m_size > x.shape[-1]:
+                random_x = np.random.choice(image_size)
+        random_y = np.random.choice(image_size)
+        if random_y + m_size > x.shape[-1]:
+            while random_y + m_size > x.shape[-1]:
+                random_y = np.random.choice(image_size)
+       
+        # apply patch to dummy image  
+        x[i][0][random_x:random_x+patch_shape[-1], random_y:random_y+patch_shape[-1]] = patch[i][0]
+        x[i][1][random_x:random_x+patch_shape[-1], random_y:random_y+patch_shape[-1]] = patch[i][1]
+        x[i][2][random_x:random_x+patch_shape[-1], random_y:random_y+patch_shape[-1]] = patch[i][2]
+    
+    mask = np.copy(x)
+    mask[mask != 0] = 1.0
+    
+    return x, mask
+    
+    
+def init_patch_circle(image_size, patch_size):
+    image_size = image_size**2
+    noise_size = int(image_size*patch_size)
+    radius = int(math.sqrt(noise_size/math.pi))
+    patch = np.zeros((1, 3, radius*2, radius*2))    
+    for i in range(3):
+        a = np.zeros((radius*2, radius*2))    
+        cx, cy = radius, radius # The center of circle 
+        y, x = np.ogrid[-radius: radius, -radius: radius]
+        index = x**2 + y**2 <= radius**2
+        a[cy-radius:cy+radius, cx-radius:cx+radius][index] = np.random.rand()
+        idx = np.flatnonzero((a == 0).all((1)))
+        
+        a = np.delete(a, idx, axis=0)
+        patch[0][i] = np.delete(a, idx, axis=1)
+    return patch, patch.shape
 
 
 # Generate the mask and apply the patch
@@ -82,12 +146,11 @@ def patch_attack(image, patch, mask, model, args):
         image = image.cuda()
     
     # compute the probability to target of the original image
-    output = F.softmax(model(image))
+    output = F.softmax(model(image), dim=1)
     target_probability = output.data[0][args.target]
     print('start pribability:', target_probability)
         
     image_with_patch = torch.mul(mask, patch) + torch.mul((1 - mask), image)
-    images.imshow(image_with_patch)
     
     for count in range(args.max_iteration):
         # Optimize the patch
@@ -96,7 +159,7 @@ def patch_attack(image, patch, mask, model, args):
         if args.cuda:
             image_with_patch = image_with_patch.cuda()
         
-        adversarial_output = F.log_softmax(model(image_with_patch))
+        adversarial_output = F.log_softmax(model(image_with_patch), dim=1)
         
         loss = -adversarial_output[0][args.target]
         loss.backward()
@@ -110,7 +173,7 @@ def patch_attack(image, patch, mask, model, args):
         image_with_patch = torch.mul(mask, patch) + torch.mul((1 - mask), image)
         image_with_patch = torch.clamp(image_with_patch, min=0, max=1)
         
-        output = F.softmax(model(image_with_patch))
+        output = F.softmax(model(image_with_patch), dim=1)
         target_probability = output.data[0][args.target]
         
         images.imshow(image_with_patch, label= f'{count+1} attacks image : {target_probability*100}% for {args.target}')

@@ -1,7 +1,9 @@
 import argparse
 import time
 import torch
+import random
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 
 def init_args():
@@ -40,6 +42,19 @@ def init_args():
     args.mean = [0.485, 0.456, 0.406]
     args.std = [0.229, 0.224, 0.225]
     
+    torch.backends.cudnn.benchmark = True
+    if torch.cuda.is_available() and not args.cuda:
+        print("WARNING: You have a CUDA device, so you should probably run with --cuda")
+        
+    if args.manualSeed is None:
+        args.manualSeed = random.randint(1, 10000)
+    print("Random Seed: ", args.manualSeed)
+    random.seed(args.manualSeed)
+    np.random.seed(args.manualSeed)
+    torch.manual_seed(args.manualSeed)
+    if args.cuda:
+        torch.cuda.manual_seed_all(args.manualSeed)
+    
     return args
 
 
@@ -51,12 +66,3 @@ def init_directories(directoryName):
     except OSError:
         pass
     
-    
-def set_randomness(random_seed):
-    torch.manual_seed(random_seed)
-    torch.cuda.manual_seed(random_seed)
-    torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    np.random.seed(random_seed)
-    random.seed(random_seed)
