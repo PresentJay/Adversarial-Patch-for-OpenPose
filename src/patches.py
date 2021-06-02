@@ -8,7 +8,7 @@ import torch
 
 # Initialize the patch
 def init_patch(args):
-    if args.patch_type == 'rectangle':
+    if args.patch_shape == 'rectangle':
         mask_length = int((args.noise_percentage * args.image_size * args.image_size)**0.5)
         patch = np.random.rand(3, mask_length, mask_length)
         return patch
@@ -18,7 +18,7 @@ def init_patch(args):
 def generate_mask(patch, args):
     applied_patch = np.zeros((3, args.image_size, args.image_size))
     
-    if args.mask_type == 'rectangle':
+    if args.patch_shape == 'rectangle':
         # patch rotation
         rotation_angle = np.random.choice(4)
         for i in range(patch.shape[0]):
@@ -72,9 +72,8 @@ def patch_attack(image, applied_patch, mask, model, args):
     mask = torch.from_numpy(mask)
     target_probability, count = 0, 0
     perturbated_image = torch.mul(mask.type(torch.FloatTensor), applied_patch.type(torch.FloatTensor)) + torch.mul((1 - mask.type(torch.FloatTensor)), image.type(torch.FloatTensor))
-    while target_probability < args.probability_threshold and count < args.max_iteration:
-        count += 1
-        
+    
+    for count in range(args.max_iteration):
         # Optimize the patch
         perturbated_image = Variable(perturbated_image.data, requires_grad=True)
         per_image = perturbated_image
@@ -96,6 +95,9 @@ def patch_attack(image, applied_patch, mask, model, args):
         
         if count%100 == 0 :
             print(f'attack {count} : {target_probability}')
+            
+        if target_probability < args.probability_threshold:
+            break
     
     perturbated_image = perturbated_image.cpu().numpy()
     applied_patch = applied_patch.cpu().numpy()
@@ -127,7 +129,6 @@ def train_patch(args, train_loader, test_loader, patch, model):
                 print('catched - - - lets make adversarial example ! !')
                 print(f'{predicted[0].data.cpu().numpy()} : {args.target}')
                 train_actual_total += 1
-                
                 
                 applied_patch, mask, x_location, y_location = generate_mask(patch, args)
                 perturbated_image, applied_patch = patch_attack(image, applied_patch, mask, model, args)

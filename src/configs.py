@@ -20,9 +20,8 @@ def init_args():
     parser.add_argument('--epochs', type=int, default=15, help="total epoch")
 
     parser.add_argument('--target', type=int, default=859, help="target label")
-    parser.add_argument('--patch_type', type=str, default='rectangle', help="type of the patch")
+    parser.add_argument('--patch_shape', type=str, default='rectangle', help="type of the patch")
     parser.add_argument('--patch_size', type=float, default=0.5, help='patch size. E.g. 0.05 ~= 5% of image ')
-    parser.add_argument('--mask_type', type=str, default='rectangle', help="type of the mask")
     
     parser.add_argument('--data_dir', type=str, default='D:\datasets\ImageNet', help="dir of the dataset")
     parser.add_argument('--outf', default='./logs', help='folder to output images and model checkpoints')
