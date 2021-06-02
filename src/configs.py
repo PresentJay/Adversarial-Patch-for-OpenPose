@@ -19,7 +19,7 @@ def init_args():
     parser.add_argument('--lr', type=float, default=1.0, help="learning rate")
     parser.add_argument('--epochs', type=int, default=15, help="total epoch")
 
-    parser.add_argument('--target', type=int, default=333, help="target label")
+    parser.add_argument('--target', type=int, default=859, help="target label")
     parser.add_argument('--patch_type', type=str, default='rectangle', help="type of the patch")
     parser.add_argument('--patch_size', type=float, default=0.5, help='patch size. E.g. 0.05 ~= 5% of image ')
     parser.add_argument('--mask_type', type=str, default='rectangle', help="type of the mask")
@@ -29,7 +29,7 @@ def init_args():
  
     parser.add_argument('--manualSeed', type=int, default=1338, help='manual seed')
     parser.add_argument('--GPU', type=str, default='0', help="index of used GPU")
-    parser.add_argument('--cuda', action='store_true', help='enables cuda')
+    parser.add_argument('--cuda', action='store_true', default=True, help='enables cuda')
     
     parser.add_argument('--image_size', type=int, default=244, help='the height / width of the input image to network (basically 244, inception_v3 is 299')
     parser.add_argument('--netClassifier', default='vgg19', help="The target classifier")
