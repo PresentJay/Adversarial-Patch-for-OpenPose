@@ -34,6 +34,11 @@ if __name__ == '__main__':
         print(f'Accuracy of the model on clean trainset and testset is {trainset_acc}% and {test_acc}%')
 
     # initialize patch
+    if patch_type == 'circle':
+        patch, patch_shape = patches.init_patch_circle(image_size, patch_size)
+    elif patch_type == 'rectangle':
+        patch, patch_shape = patches.init_patch_rec
+    
     patch = patches.init_patch(args)
     
     # TODO: apply statusbar

@@ -17,7 +17,7 @@ def init_patch(args):
         return patch
     
 
-def init_patch_square(image_size, patch_size):
+def init_patch_rectangle(image_size, patch_size):
     # get mask
     image_size = image_size**2
     noise_size = image_size*patch_size
@@ -26,7 +26,7 @@ def init_patch_square(image_size, patch_size):
     return patch, patch.shape
 
 
-def square_transform(patch, data_shape, patch_shape, image_size):
+def rectangle_transform(patch, data_shape, patch_shape, image_size):
     # get dummy image 
     x = np.zeros(data_shape)
     
@@ -125,9 +125,6 @@ def test_patch(args, patch, test_loader, model):
             
             test_success += models.test_image(model, perturbated_image, args.target)
             
-        elif predicted[0] == label and predicted[0].data.cpu().numpy() == args.target and args.showProgress:
-            print(f'exception ==> {test_total} : {label} == {predicted[0]}')
-            
     return test_success / test_actual_total
 
 
@@ -201,6 +198,7 @@ def train_patch(args, train_loader, test_loader, patch, model):
     for epoch in range(args.epochs):
         if args.showProgress:
             print(f'{epoch} epoch : patch start . . .')
+            
         train_total, train_actual_total, train_success = 0, 0, 0
         for (image, label) in train_loader:
             train_total += label.shape[0] # 1
