@@ -14,7 +14,7 @@ def listModels_in_TV():
     return list(alldict - filterset)
 
 
-def test(model, dataloader, cuda=False):
+def test(model, dataloader, cuda=False, explain=True):
     correct = 0
     total = 0
     
@@ -30,20 +30,20 @@ def test(model, dataloader, cuda=False):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
             
-            if total % 500 == 0:
+            if total % 500 == 0 and explain:
                 print(f'{total} of images are tested . . . intermediate score = {correct / total * 100}')
     
     return correct / total * 100
 
 
-def test_image(model, image, target=None):
+def test_image(model, image, target=None, explain=True):
     output = model(image)
     _, predicted = torch.max(output.data, 1)
     prediction = predicted[0].data.cpu().numpy()
     
     if target is None:
         return prediction
-    else:
+    elif explain:
         print(f'test image - - - {prediction} : {target}')
         print('success\n' if prediction == target else 'failed\n')
         return 1 if prediction == target else 0

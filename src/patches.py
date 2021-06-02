@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src import configs, models
-from utils import images
+from utils import images, times
 from torch.autograd import Variable
 import torch
+import torch.nn.functional as F
 
 # Initialize the patch
 def init_patch(args):
@@ -38,7 +39,8 @@ def generate_mask(patch, args):
 # Test the patch on dataset
 def test_patch(args, patch, test_loader, model):
     test_total, test_actual_total, test_success = 0, 0, 0
-    print('lets test this patch . . . !')
+    if args.showProgress:
+        print('lets test this patch . . . !')
     for (image, label) in test_loader:
         test_total += label.shape[0]
         assert image.shape[0] == 1, 'Only one picture should be loaded each time.'
@@ -47,7 +49,8 @@ def test_patch(args, patch, test_loader, model):
         output = model(image)
         _, predicted = torch.max(output.data, 1)
         if predicted[0] != label and predicted[0].data.cpu().numpy() != args.target:
-            print(f'{test_total} : {predicted[0]}vs{label} ~ success')
+            if args.showProgress:
+                print(f'{test_total} : {predicted[0]} vs {label.data[0]}')
             
             test_actual_total += 1
             applied_patch, mask, x_location, y_location = generate_mask(patch, args)
@@ -58,7 +61,7 @@ def test_patch(args, patch, test_loader, model):
             
             test_success += models.test_image(model, perturbated_image, args.target)
             
-        elif predicted[0] == label and predicted[0].data.cpu().numpy() == args.target:
+        elif predicted[0] == label and predicted[0].data.cpu().numpy() == args.target and args.showProgress:
             print(f'exception ==> {test_total} : {label} == {predicted[0]}')
             
     return test_success / test_actual_total
@@ -67,53 +70,74 @@ def test_patch(args, patch, test_loader, model):
 # Patch attack via optimization
 # Assert: applied patch should be a numpy
 # Return the final perturbated picture and the applied patch. Their types are both numpy
-def patch_attack(image, applied_patch, mask, model, args):
-    applied_patch = torch.from_numpy(applied_patch)
-    mask = torch.from_numpy(mask)
-    target_probability, count = 0, 0
-    perturbated_image = torch.mul(mask.type(torch.FloatTensor), applied_patch.type(torch.FloatTensor)) + torch.mul((1 - mask.type(torch.FloatTensor)), image.type(torch.FloatTensor))
+def patch_attack(image, patch, mask, model, args):
+    patch = torch.from_numpy(patch).type(torch.FloatTensor)
+    mask = torch.from_numpy(mask).type(torch.FloatTensor)
+    image = image.type(torch.FloatTensor)
+    print('patch attack start . . .')
+    
+    if args.cuda:
+        patch = patch.cuda()
+        mask = mask.cuda()
+        image = image.cuda()
+    
+    # compute the probability to target of the original image
+    output = F.softmax(model(image))
+    target_probability = output.data[0][args.target]
+    print('start pribability:', target_probability)
+        
+    image_with_patch = torch.mul(mask, patch) + torch.mul((1 - mask), image)
+    images.imshow(image_with_patch)
     
     for count in range(args.max_iteration):
         # Optimize the patch
-        perturbated_image = Variable(perturbated_image.data, requires_grad=True)
-        per_image = perturbated_image
-        per_image = per_image.cuda()
-        output = model(per_image)
-        target_log_softmax = torch.nn.functional.log_softmax(output, dim=1)[0][args.target]
-        target_log_softmax.backward()
-        patch_grad = perturbated_image.grad.clone().cpu()
-        perturbated_image.grad.data.zero_()
-        applied_patch = args.lr * patch_grad + applied_patch.type(torch.FloatTensor)
-        applied_patch = torch.clamp(applied_patch, min=0, max=1)
+        image_with_patch = Variable(image_with_patch.data, requires_grad=True)
         
-        # Test the patch
-        perturbated_image = torch.mul(mask.type(torch.FloatTensor), applied_patch.type(torch.FloatTensor)) + torch.mul((1-mask.type(torch.FloatTensor)), image.type(torch.FloatTensor))
-        perturbated_image = torch.clamp(perturbated_image, min=0, max=1)
-        perturbated_image = perturbated_image.cuda()
-        output = model(perturbated_image)
-        target_probability = torch.nn.functional.softmax(output, dim=1).data[0][args.target]
+        if args.cuda:
+            image_with_patch = image_with_patch.cuda()
         
-        if count%100 == 0 :
-            print(f'attack {count} : {target_probability}')
+        adversarial_output = F.log_softmax(model(image_with_patch))
+        
+        loss = -adversarial_output[0][args.target]
+        loss.backward()
+        
+        adversarial_gradient = image_with_patch.grad.clone()
+        image_with_patch.grad.data.zero_()
+        
+        
+        patch = patch - adversarial_gradient
+        
+        image_with_patch = torch.mul(mask, patch) + torch.mul((1 - mask), image)
+        image_with_patch = torch.clamp(image_with_patch, min=0, max=1)
+        
+        output = F.softmax(model(image_with_patch))
+        target_probability = output.data[0][args.target]
+        
+        images.imshow(image_with_patch, label= f'{count+1} attacks image : {target_probability*100}% for {args.target}')
             
-        if target_probability < args.probability_threshold:
+        if target_probability >= args.probability_threshold:
             break
     
-    perturbated_image = perturbated_image.cpu().numpy()
-    applied_patch = applied_patch.cpu().numpy()
-    return perturbated_image, applied_patch
+    image_with_patch = image_with_patch.cpu().numpy()
+    patch = patch.cpu().numpy()
+    
+    if args.showProgress:
+        print(f'{count} of attack is done. . . success rate : {target_probability * 100}% ')
+    
+    return image_with_patch, patch
 
 
 def train_patch(args, train_loader, test_loader, patch, model):
-    best_patch_epoch, best_patch_success_rate = 0.0, 0.0
+    best_patch_epoch, best_patch_success_rate = 0, 0
     
-    directoryName = configs.get_current_time()
+    directoryName = times.get_current_time()
     configs.init_directories(directoryName)
     
     # TODO: apply statusbar
     # Generate the patch per a epoch
     for epoch in range(args.epochs):
-        print(f'{epoch} epoch : patch start . . .')
+        if args.showProgress:
+            print(f'{epoch} epoch : patch start . . .')
         train_total, train_actual_total, train_success = 0, 0, 0
         for (image, label) in train_loader:
             train_total += label.shape[0] # 1
@@ -124,18 +148,20 @@ def train_patch(args, train_loader, test_loader, patch, model):
                 label = label.cuda()
                 
             output = model(image)
-            _, predicted = torch.max(output.data, 1)
-            if predicted[0] != label and predicted[0].data.cpu().numpy() != args.target:
-                print('catched - - - lets make adversarial example ! !')
-                print(f'{predicted[0].data.cpu().numpy()} : {args.target}')
+            prediction = output.data.max(1)[1][0]
+            if prediction != args.target:
+                if args.showProgress:
+                    print(f'{epoch}-{train_total} : catched - - - lets make adversarial example ! !')
+                    print(f'target {args.target} : prediction {output.data.max(1)[1][0]}')
                 train_actual_total += 1
                 
                 applied_patch, mask, x_location, y_location = generate_mask(patch, args)
                 perturbated_image, applied_patch = patch_attack(image, applied_patch, mask, model, args)
                 
                 perturbated_image = torch.from_numpy(perturbated_image).cuda()
-                print('perturbate done. . .')
-                images.imshow(perturbated_image)
+                if args.showProgress:
+                    print('perturbate done. . .')
+                    # images.imshow(perturbated_image)
                 
                 train_success += models.test_image(model, perturbated_image, args.target)
                 patch = applied_patch[0][:, x_location:x_location + patch.shape[1], y_location:y_location + patch.shape[2]]
@@ -158,3 +184,5 @@ def train_patch(args, train_loader, test_loader, patch, model):
             plt.savefig(f"results/{directoryName}/best/patch.png")
 
     print("The best patch is found at epoch {} with success rate {}% on testset".format(best_patch_epoch, 100 * best_patch_success_rate))
+
+    

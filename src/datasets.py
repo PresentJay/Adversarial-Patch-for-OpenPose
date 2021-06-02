@@ -9,19 +9,25 @@ import numpy as np
 # Load the datasets
 def load_data(args):
     
+    mean, std = np.array(args.mean, dtype=np.float), np.array(args.std, dtype=np.float)
+    
     # Setup the transformation
     train_transforms = transforms.Compose([
-        transforms.RandomResizedCrop(args.image_size),
-        transforms.RandomHorizontalFlip(),
+        # transforms.RandomResizedCrop(args.image_size, scale=(0.9, 1.0), ratio=(1., 1.)),
+        # transforms.RandomHorizontalFlip(),
+        transforms.Resize(round(args.image_size*1.050)),
+        transforms.CenterCrop(args.image_size),
         transforms.ToTensor(),
-        transforms.Normalize(args.mean, args.std)
+        transforms.Normalize(mean, std)
     ])
 
     test_transforms = transforms.Compose([
-        transforms.Resize((args.image_size, args.image_size)),
-        transforms.RandomHorizontalFlip(),
+        # transforms.Resize((args.image_size, args.image_size)),
+        # transforms.RandomHorizontalFlip(),              
+        transforms.Resize(round(args.image_size*1.050)),
+        transforms.CenterCrop(args.image_size),
         transforms.ToTensor(),
-        transforms.Normalize(args.mean, args.std)
+        transforms.Normalize(mean, std)
     ])
 
     # TODO: set seed (in configs.py)
