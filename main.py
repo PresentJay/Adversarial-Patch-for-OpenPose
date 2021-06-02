@@ -27,7 +27,6 @@ if __name__ == '__main__':
     
     trainset_acc = models.test(netClassifier, train_loader, cuda=args.cuda)
     test_acc = models.test(netClassifier, test_loader, cuda=args.cuda)
-    
     print(f'Accuracy of the model on clean trainset and testset is {trainset_acc}% and {test_acc}%')
 
     # initialize patch

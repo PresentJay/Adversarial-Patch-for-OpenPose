@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src import configs, models
+from utils import images
 from torch.autograd import Variable
 import torch
 
@@ -18,7 +19,6 @@ def generate_mask(patch, args):
     applied_patch = np.zeros((3, args.image_size, args.image_size))
     
     if args.mask_type == 'rectangle':
-        
         # patch rotation
         rotation_angle = np.random.choice(4)
         for i in range(patch.shape[0]):
@@ -131,8 +131,10 @@ def train_patch(args, train_loader, test_loader, patch, model):
                 
                 applied_patch, mask, x_location, y_location = generate_mask(patch, args)
                 perturbated_image, applied_patch = patch_attack(image, applied_patch, mask, model, args)
+                
                 perturbated_image = torch.from_numpy(perturbated_image).cuda()
                 print('perturbate done. . .')
+                images.imshow(perturbated_image)
                 
                 train_success += models.test_image(model, perturbated_image, args.target)
                 patch = applied_patch[0][:, x_location:x_location + patch.shape[1], y_location:y_location + patch.shape[2]]
