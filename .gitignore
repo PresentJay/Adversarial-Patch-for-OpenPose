@@ -168,5 +168,5 @@ pip-selfcheck.json
 
 data/Imagenet1k
 results/*
-data/COCO/*
+data/annotations/*
 data/models/*

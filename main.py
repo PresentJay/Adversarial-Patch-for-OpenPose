@@ -24,6 +24,8 @@ if __name__ == '__main__':
     if args.showProgress:
         print("prepare dataset from =>", args.data_dir)
     train_loader, test_loader = datasets.load_data(args)
+    # train_loader, test_loader = datasets.coco_dataloader(args) # src/datasets.py에서 데이터셋 로드  
+    
     if args.showProgress:
         print('dataset is loaded. . . complete')
     
@@ -34,11 +36,6 @@ if __name__ == '__main__':
         print(f'Accuracy of the model on clean trainset and testset is {trainset_acc}% and {test_acc}%')
 
     # initialize patch
-    if patch_type == 'circle':
-        patch, patch_shape = patches.init_patch_circle(image_size, patch_size)
-    elif patch_type == 'rectangle':
-        patch, patch_shape = patches.init_patch_rec
-    
     patch = patches.init_patch(args)
     
     # TODO: apply statusbar

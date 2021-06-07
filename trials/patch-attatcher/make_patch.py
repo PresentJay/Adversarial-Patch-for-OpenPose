@@ -22,7 +22,7 @@ from utils import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
-parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train for')
+parser.add_argument('--epochs', type=int, default=20, help='number of epochs to train for')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 
 parser.add_argument('--target', type=int, default=859, help='The target class: 859 == toaster')
@@ -30,16 +30,16 @@ parser.add_argument('--conf_target', type=float, default=0.9, help='Stop attack 
 
 parser.add_argument('--max_count', type=int, default=1000, help='max number of iterations to find adversarial example')
 parser.add_argument('--patch_type', type=str, default='circle', help='patch type: circle or square')
-parser.add_argument('--patch_size', type=float, default=0.5, help='patch size. E.g. 0.05 ~= 5% of image ')
+parser.add_argument('--patch_size', type=float, default=0.05, help='patch size. E.g. 0.05 ~= 5% of image ')
 
 parser.add_argument('--train_size', type=int, default=2000, help='Number of training images')
-parser.add_argument('--test_size', type=int, default=1923, help='Number of test images')
+parser.add_argument('--test_size', type=int, default=2000, help='Number of test images')
 
 parser.add_argument('--image_size', type=int, default=299, help='the height / width of the input image to network')
 
 parser.add_argument('--plot_all', type=int, default=1, help='1 == plot all successful adversarial images')
 
-parser.add_argument('--netClassifier', default='inceptionv3', help="The target classifier")
+parser.add_argument('--netClassifier', default='vgg19', help="The target classifier")
 
 parser.add_argument('--outf', default='./logs', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, default=1338, help='manual seed')
@@ -47,7 +47,6 @@ parser.add_argument('--manualSeed', type=int, default=1338, help='manual seed')
 opt = parser.parse_args()
 print(opt)
 
-# create output directory
 try:
     os.makedirs(opt.outf)
 except OSError:
@@ -77,7 +76,7 @@ train_size = opt.train_size
 test_size = opt.test_size
 plot_all = opt.plot_all 
 
-assert train_size + test_size <= 3923, "Traing set size + Test set size > Total dataset size"
+assert train_size + test_size <= 50000, "Traing set size + Test set size > Total dataset size"
 
 print("=> creating model ")
 netClassifier = pretrainedmodels.__dict__[opt.netClassifier](num_classes=1000, pretrained='imagenet')
@@ -88,13 +87,13 @@ if opt.cuda:
 print('==> Preparing data..')
 normalize = transforms.Normalize(mean=netClassifier.mean,
                                  std=netClassifier.std)
-idx = np.arange(3923)
+idx = np.arange(50000)
 np.random.shuffle(idx)
 training_idx = idx[:train_size]
 test_idx = idx[train_size:test_size]
 
 train_loader = torch.utils.data.DataLoader(
-    dset.ImageFolder('d:/datasets/imagenet1k/val', transforms.Compose([
+    dset.ImageFolder('D:/datasets/ImageNet/train', transforms.Compose([
         transforms.Scale(round(max(netClassifier.input_size)*1.050)),
         transforms.CenterCrop(max(netClassifier.input_size)),
         transforms.ToTensor(),
@@ -106,7 +105,7 @@ train_loader = torch.utils.data.DataLoader(
     num_workers=opt.workers, pin_memory=True)
  
 test_loader = torch.utils.data.DataLoader(
-    dset.ImageFolder('d:/datasets/imagenet1k/val', transforms.Compose([
+    dset.ImageFolder('D:/datasets/ImageNet/train', transforms.Compose([
         transforms.Scale(round(max(netClassifier.input_size)*1.050)),
         transforms.CenterCrop(max(netClassifier.input_size)),
         transforms.ToTensor(),

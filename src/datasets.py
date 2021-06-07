@@ -1,14 +1,23 @@
+import os
+import numpy as np
+
 import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder, ImageNet
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
-import os
 
-import numpy as np
+from src.coco import CocoTrainDataset, CocoValDataset
+from src.transformations import ConvertKeypoints, Scale, Rotate, CropPad, Flip
+
+COCO_MEAN = (0.4404, 0.4440, 0.4327)
+COCO_STD = (0.2458, 0.2410, 0.2468)
+
+ROOT = '/home/jubin/Desktop/imagenet-mini'
+jsonfile = './data/mpii/annotation/mpii_annotations.json'
+
 
 # Load the datasets
 def load_data(args):
-    
     mean, std = np.array(args.mean, dtype=np.float), np.array(args.std, dtype=np.float)
     
     # Setup the transformation
@@ -30,7 +39,6 @@ def load_data(args):
         transforms.Normalize(mean, std)
     ])
 
-    # TODO: set seed (in configs.py)
     index = np.arange(args.total_num)
     np.random.shuffle(index)
     train_index = index[:args.train_size]
@@ -49,3 +57,40 @@ def load_data(args):
     # https://discuss.pytorch.org/t/when-to-set-pin-memory-to-true/19723
     
     return train_loader, test_loader
+
+
+def coco_dataloader(args):
+    prepared_train_labels = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/annotations/prepared_train_annotation.pkl'
+    train_images_folder = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/images/train2017/'
+    labels = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/annotations/person_keypoints_val2017.json'
+    images_folder = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/image/val2017/'
+    stride = 8
+    sigma = 7
+    path_thickness = 1
+
+    train_dataset = CocoTrainDataset(prepared_train_labels, train_images_folder,
+                               stride, sigma, path_thickness,
+                               transform=transforms.Compose([
+                                   ConvertKeypoints(),
+                                   Scale(),
+                                   Rotate(pad=(128, 128, 128)),
+                                   CropPad(pad=(128, 128, 128)),
+    
+                                   Flip()]))
+
+    val_dataset = CocoValDataset(labels, images_folder)
+    
+    print(len(train_dataset))
+    print(len(val_dataset))
+    for image in train_dataset:
+        print(image)
+
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    
+    #for batch in val_dataset:
+    #    print(batch)
+    #    break
+
+    return train_loader, val_loader
+

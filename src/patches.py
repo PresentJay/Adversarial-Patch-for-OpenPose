@@ -5,85 +5,40 @@ import math
 from src import configs, models
 from utils import images, times
 from torch.autograd import Variable
+
 import torch
 import torch.nn.functional as F
 
-
 # Initialize the patch
 def init_patch(args):
-    if args.patch_shape == 'rectangle':
-        mask_length = int((args.noise_percentage * args.image_size * args.image_size)**0.5)
-        patch = np.random.rand(3, mask_length, mask_length)
-        return patch
+    image_size = args.image_size ** 2
+    noised_image_size = image_size * args.patch_size
     
-
-def init_patch_rectangle(image_size, patch_size):
-    # get mask
-    image_size = image_size**2
-    noise_size = image_size*patch_size
-    noise_dim = int(noise_size**(0.5))
-    patch = np.random.rand(1,3,noise_dim,noise_dim)
-    return patch, patch.shape
-
-
-def rectangle_transform(patch, data_shape, patch_shape, image_size):
-    # get dummy image 
-    x = np.zeros(data_shape)
+    if args.patch_type == 'rectangle':
+        mask_length = int(noised_image_size ** 0.5)
+        patch = np.random.rand(1, 3, mask_length, mask_length)
     
-    # get shape
-    m_size = patch_shape[-1]
+    elif args.patch_type == 'circle':
+        radius = int(math.sqrt(noised_image_size / math.pi))
+        patch = np.zeros((1, 3, radius * 2, radius * 2))
+        for dim in range(3):
+            circle = np.zeros((radius*2, radius*2))
+            x, y = np.ogrid[-radius:radius, -radius:radius]
+            index = (x**2 + y**2) <= radius**2
+            circle[0:radius*2, 0:radius*2][index] = np.random.rand()
+            idx = np.flatnonzero((circle == 0).all((1)))
+            circle = np.delete(circle, idx, axis=0)
+            patch[0][i] = np.delete(circle, idx, axis=1)
     
-    for i in range(x.shape[0]):
-
-        # random rotation
-        rot = np.random.choice(4)
-        for j in range(patch[i].shape[0]):
-            patch[i][j] = np.rot90(patch[i][j], rot)
-        
-        # random location
-        random_x = np.random.choice(image_size)
-        if random_x + m_size > x.shape[-1]:
-            while random_x + m_size > x.shape[-1]:
-                random_x = np.random.choice(image_size)
-        random_y = np.random.choice(image_size)
-        if random_y + m_size > x.shape[-1]:
-            while random_y + m_size > x.shape[-1]:
-                random_y = np.random.choice(image_size)
-       
-        # apply patch to dummy image  
-        x[i][0][random_x:random_x+patch_shape[-1], random_y:random_y+patch_shape[-1]] = patch[i][0]
-        x[i][1][random_x:random_x+patch_shape[-1], random_y:random_y+patch_shape[-1]] = patch[i][1]
-        x[i][2][random_x:random_x+patch_shape[-1], random_y:random_y+patch_shape[-1]] = patch[i][2]
-    
-    mask = np.copy(x)
-    mask[mask != 0] = 1.0
-    
-    return x, mask
-    
-    
-def init_patch_circle(image_size, patch_size):
-    image_size = image_size**2
-    noise_size = int(image_size*patch_size)
-    radius = int(math.sqrt(noise_size/math.pi))
-    patch = np.zeros((1, 3, radius*2, radius*2))    
-    for i in range(3):
-        a = np.zeros((radius*2, radius*2))    
-        cx, cy = radius, radius # The center of circle 
-        y, x = np.ogrid[-radius: radius, -radius: radius]
-        index = x**2 + y**2 <= radius**2
-        a[cy-radius:cy+radius, cx-radius:cx+radius][index] = np.random.rand()
-        idx = np.flatnonzero((a == 0).all((1)))
-        
-        a = np.delete(a, idx, axis=0)
-        patch[0][i] = np.delete(a, idx, axis=1)
-    return patch, patch.shape
+    return patch
 
 
-# Generate the mask and apply the patch
-def generate_mask(patch, args):
-    applied_patch = np.zeros((3, args.image_size, args.image_size))
+
+# transpormation the patch by using mask
+def generate_mask(patch, patch_shape, image_shape, args):
+    mask = np.zeros(image_shape)
     
-    if args.patch_shape == 'rectangle':
+    if args.patch_type == 'rectangle':
         # patch rotation
         rotation_angle = np.random.choice(4)
         for i in range(patch.shape[0]):
@@ -156,7 +111,8 @@ def patch_attack(image, patch, mask, model, args):
         if args.cuda:
             image_with_patch = image_with_patch.cuda()
         
-        adversarial_output = F.log_softmax(model(image_with_patch), dim=1)
+        adversarial_output = F.log_softmax(model
+                                           (image_with_patch), dim=1)
         
         loss = -adversarial_output[0][args.target]
         loss.backward()
@@ -207,6 +163,8 @@ def train_patch(args, train_loader, test_loader, patch, model):
             if args.cuda:
                 image = image.cuda()
                 label = label.cuda()
+            
+            # print(f'image_shape : {image.cpu().numpy().shape}')  # check the image_shape
                 
             output = model(image)
             prediction = output.data.max(1)[1][0]
@@ -224,7 +182,7 @@ def train_patch(args, train_loader, test_loader, patch, model):
                     print('perturbate done. . .')
                     # images.imshow(perturbated_image)
                 
-                train_success += models.test_image(model, perturbated_image, args.target)
+                train_success += models.predict_once(model, perturbated_image, args.target)
                 patch = applied_patch[0][:, x_location:x_location + patch.shape[1], y_location:y_location + patch.shape[2]]
         
         
