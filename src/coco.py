@@ -16,14 +16,14 @@ BODY_PARTS_KPT_IDS = [[1, 8], [8, 9], [9, 10], [1, 11], [11, 12], [12, 13], [1, 
                       [1, 5], [5, 6], [6, 7], [5, 17], [1, 0], [0, 14], [0, 15], [14, 16], [15, 17]]
 
 
-def get_mask(segmentations, mask):
+def get_mask(segmentations, mask): #CocoTrainDataset class에서 segmentations이라는 annotation을 불러올 때 사용하는 함수 
     for segmentation in segmentations:
         rle = pycocotools.mask.frPyObjects(segmentation, mask.shape[0], mask.shape[1])
         mask[pycocotools.mask.decode(rle) > 0.5] = 0
     return mask
 
 
-class CocoTrainDataset(Dataset):
+class CocoTrainDataset(Dataset): # COCO train dataset을 불러오는 클래스
     def __init__(self, labels, images_folder, stride, sigma, paf_thickness, transform=None):
         super().__init__()
         self._images_folder = images_folder
@@ -34,7 +34,10 @@ class CocoTrainDataset(Dataset):
         with open(labels, 'rb') as f:
             self._labels = pickle.load(f)
 
-    def __getitem__(self, idx):
+    #------------getitem 사용 예시------------
+    #for image in train_dataset:
+    #    print(image)
+    def __getitem__(self, idx): # 원하는 index의 데이터를 return  
         label = copy.deepcopy(self._labels[idx])  # label modified in transform
         image = cv2.imread(os.path.join(self._images_folder+label['img_paths']), cv2.IMREAD_COLOR)
         print(label['img_paths'])
@@ -70,7 +73,7 @@ class CocoTrainDataset(Dataset):
         sample['image'] = image.transpose((2, 0, 1))
         return sample
 
-    def __len__(self):
+    def __len__(self): # 총 데이터 개수를 return
         return len(self._labels)
 
     def _generate_keypoint_maps(self, sample):
@@ -164,7 +167,7 @@ class CocoTrainDataset(Dataset):
                     paf_map[1, y, x] = y_ba
 
 
-class CocoValDataset(Dataset):
+class CocoValDataset(Dataset): # COCO val dataset을 불러오는 클래스, 아래 함수 용도 위와 동일
     def __init__(self, labels, images_folder):
         super().__init__()
         with open(labels, 'r') as f:

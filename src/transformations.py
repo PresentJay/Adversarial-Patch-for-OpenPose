@@ -3,6 +3,9 @@ import random
 import cv2
 import numpy as np
 
+"""
+transformations.py: data 처리하는 class를 모아둔 코드
+"""
 
 class ConvertKeypoints:
     def __call__(self, sample):
