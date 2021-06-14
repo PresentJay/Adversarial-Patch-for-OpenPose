@@ -195,12 +195,12 @@ def coco_dataloader(args):
 
     val_dataset = CocoValDataset(labels, images_folder)
 
-    print(len(train_dataset))
-    print(len(val_dataset))
-    for image in train_dataset:
-        print(image)
-        input()
-        break
+    # print(len(train_dataset))
+    # print(len(val_dataset))
+    # for image in train_dataset:
+    #     print(image)
+    #     input()
+    #     break
 
     train_loader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)

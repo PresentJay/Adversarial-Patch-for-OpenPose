@@ -21,6 +21,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 from src import configs, datasets, models, patches
+from utils import images
 
 import numpy as np
 import math
@@ -134,6 +135,7 @@ def main():
             train_targets = torch.tensor(
                 [args.target_class]).repeat(args.batch_size).cuda()
             data = data.cuda()
+            images.show_batch_data(data, "wow", block=True)
 
             patch.detach_()
             patch.requires_grad = True
