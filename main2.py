@@ -143,6 +143,8 @@ def main():
             # Apply patch
             patched_data = apply_patch(data, patch, params)
             output = model(patched_data)
+            print(output)
+            print(dir(output))
 
             input()
 
