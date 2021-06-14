@@ -13,10 +13,10 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = args.GPU
     
     # set the model
-    global netClassifier
     netClassifier = models.load_openpose() # args.netClassifier
     if args.showProgress:
         print(f'attack model = {netClassifier.__class__}')
+    
     
     
     # load the dataset

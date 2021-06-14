@@ -172,10 +172,10 @@ def load_data(args):
 #--------------- COCO ----------------
 
 def coco_dataloader(args):
-    prepared_train_labels = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/annotations/prepared_train_annotation.pkl'
-    train_images_folder = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/images/train2017/'
-    labels = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/annotations/person_keypoints_val2017.json'
-    images_folder = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/coco/image/val2017/'
+    prepared_train_labels = 'data/annotations/prepared_train_annotation.pkl'
+    train_images_folder = 'D:/datasets/coco2017/images/train2017/'
+    labels = 'data/annotations/person_keypoints_val2017.json'
+    images_folder = 'D:/datasets/coco2017/images/val2017/'
 
     stride = 8
     sigma = 7
@@ -198,8 +198,8 @@ def coco_dataloader(args):
     #for image in train_dataset:
     #    print(image)
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
 
     return train_loader, val_loader
 

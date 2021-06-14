@@ -60,7 +60,7 @@ def predict_once(model, image, target=None, explain=True):
 # openpose model load
 def load_openpose():
     from modules.body import bodypose_model
-    PATH = '/home/jubin/Desktop/TeamProject/Adversarial-Patch-for-OpenPose/data/models/body_pose_model.pth'
+    PATH = 'd:/models/body_pose_model.pth'
 
     model = bodypose_model()
     if torch.cuda.is_available():
