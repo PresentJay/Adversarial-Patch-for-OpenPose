@@ -1,68 +1,65 @@
 import argparse
-import time
+import datetime
 import torch
 import random
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import src.models as models
 
 def init_args():
     parser = argparse.ArgumentParser()
     
     # about Environments of this experiment
-    parser.add_argument('--manualSeed', type=int, default=1338, help='manual seed')
-    parser.add_argument('--GPU', type=str, default='0', help="index of used GPU")
-    parser.add_argument('--cuda', action='store_true', default=True, help='enables cuda')
-    parser.add_argument('--showProgress', action='store_true', default=True, help='show process logs for your understanding')
-    parser.add_argument('--num_workers', type=int, default=4, help="num_workers (to be half of your CPU cores")
+    parser.add_argument('--seed', '--s', metavar='SEED', type=int, default=None, help='Select the seed')
+    parser.add_argument('--hideProgress', '-h', metavar='SILENT', action='store_true', help='hide process logs for your understanding')
+    parser.add_argument('--num_workers', '--jobs', '--j', metavar='JOBS', type=int, default=4, help="num_workers (recommend to be half of your CPU cores")
+    
+    # about Model
+    parser.add_argument('--use-torchvision', '--use-tv', action='store_false')
+    parser.add_argument('--model', '-m', metavar='MODEL', default='vgg19', choices=models.get_model_names(), help=f'choose model: {"|".join(models.get_model_names())} *defalt: vgg19')
+    parser.add_argument('--model_url', metavar='M_DIR', default='D:/datasets/ImageNet')
+    parser.add_argument('--original', '--o', metavar='O', action='store_false')
     
     # about Dataset
-    parser.add_argument('--total_num', type=int, default=200, help="number of dataset images")
-    parser.add_argument('--train_size', type=int, default=100, help="number of training images")
-    parser.add_argument('--test_size', type=int, default=100, help="number of test images")
-    parser.add_argument('--data_dir', type=str, default='D:\datasets\ImageNet', help="dir of the dataset")
+    parser.add_argument('--data_dir', '--data', metavar='D_DIR', default='D:\datasets\ImageNet', help="dir of the dataset")
+    parser.add_argument('--trainsize', type=int, default=2000, help="number of training data")
+    parser.add_argument('--testsize', type=int, default=400, help="number of testing data")
     parser.add_argument('--image_size', type=int, default=244, help='the height / width of the input image to network (basically 244, inception_v3 is 299')
-    parser.add_argument('--batch_size', type=int, default=1, help="batch size")
-    
-    # about Model (pretrained)
-    parser.add_argument('--netClassifier', default='vgg19', help="The target classifier")
     
     # about Training Adversarial Patch
-    parser.add_argument('--noise_percentage', type=float, default=0.1, help="percentage of the patch size compared with the image size")
     parser.add_argument('--max_iteration', type=int, default=1000, help="max number of iterations to find adversarial example")
-    parser.add_argument('--patch_size', type=float, default=0.5, help='patch size. E.g. 0.05 ~= 5% of image ')
-    parser.add_argument('--lr', type=float, default=1.0, help="learning rate")
-    parser.add_argument('--epochs', type=int, default=5, help="total epoch")
+    parser.add_argument('--lr', '--learning-rate', metavar='LR', type=float, default=10., help="initial learning rate")
+    parser.add_argument('--lr-schedule', type=int, nargs='+', default=[2000, 3000], help="decaying learning rate at these steps.")
+    parser.add_argument('--epochs', type=int, default=20, help="total epoch")
+    parser.add_argument('--steps', default=40000, type=int, metavar='N', help='number of total batches to run')
+    parser.add_argument('--test-batch', default=500, type=int)
+    parser.add_argument('--validate-freq', default=4000, type=int, help='number of steps to run before evaluating')
 
     # about Adversarial Patch Condition
-    parser.add_argument('--target', type=int, default=859, help="target label index")
-    parser.add_argument('--patch_type', type=str, default='rectangle', help="type of the patch => (circle or rectangle)")
-    parser.add_argument('--probability_threshold', type=float, default=0.9, help="minimum target probability")
+    parser.add_argument('--random-init', action='store_true')
+    parser.add_argument('--target', '--t', metavar='T', type=int, default=859, help="The target class of adversarial patch : index 859 == toaster")
+    parser.add_argument('--patch_type', type=str, default='square', choices=['square', 'circle'], help="type of the patch => (circle or square)")
+    parser.add_argument('--probability_threshold', type=float, default=0.9, help="Stop attack on image when target classifier reaches this value for target class")
+    parser.add_argument('--max-angle', type=float, default='22.5', help='maximum rotation angle for patch')
+    parser.add_argument('--min-scale', type=float, default='0.1', help='min scale for patch')
+    parser.add_argument('--max-scale', type=float, default='1.2', help='max scale for patch')
+    parser.add_argument('--tv-scale', type=float, default='0.', help='scale for total variation patch loss')
     
     # about logging
-    parser.add_argument('--outf', default='./logs', help='folder to output images and model checkpoints')
+    parser.add_argument('--result-dir', '--output-dir', metavar='DEST', default=str(datetime.datetime.now().date()), help='folder to output images and model checkpoints')
  
     args = parser.parse_args()
-    assert args.train_size + args.test_size <= args.total_num, "train_size + test_size must be same or lower than Total dataset size"
-    
-    if args.netClassifier.startswith('inception'):
-        assert args.image_size==299, "inception model's input is 299"
-        
-    args.mean = [0.485, 0.456, 0.406]
-    args.std = [0.229, 0.224, 0.225]
-    
-    torch.backends.cudnn.benchmark = True
-    if torch.cuda.is_available() and not args.cuda:
-        print("WARNING: You have a CUDA device, so you should probably run with --cuda")
         
     if args.manualSeed is None:
         args.manualSeed = random.randint(1, 10000)
     print("Random Seed: ", args.manualSeed)
     random.seed(args.manualSeed)
     np.random.seed(args.manualSeed)
-    torch.manual_seed(args.manualSeed)
-    if args.cuda:
-        torch.cuda.manual_seed_all(args.manualSeed)
+    
+    # TODO: consider shape variables
+    args.imageshape = [3, args.image_size, args.image_size]
+    args.patchshape = [3, ]
     
     return args
 
