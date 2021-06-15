@@ -186,12 +186,10 @@ def coco_dataloader(args):
     train_dataset = CocoTrainDataset(prepared_train_labels, train_images_folder,
                                      stride, sigma, path_thickness,
                                      transform=transforms.Compose([
-                                         ConvertKeypoints(),
-                                         Scale(),
-                                         Rotate(pad=(128, 128, 128)),
-                                         CropPad(pad=(128, 128, 128)),
-
-                                         Flip()]))
+                                            transforms.Resize((244, 244)),
+                                            transforms.ToTensor(),
+                                            transforms.Normalize(COCO_MEAN, COCO_STD)
+                                         ]))
 
     val_dataset = CocoValDataset(labels, images_folder)
 

@@ -32,7 +32,7 @@ from util import circle_mask, affine_coeffs, apply_patch, tensor_to_pil, sample_
 import matplotlib
 matplotlib.use('agg')
 # Turn interactive plotting off
-plt.ioff()
+# plt.ioff()
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -128,14 +128,21 @@ def main():
     i = 0
     while True:
         finished = False
-        for data, _ in test_loader:
+        
+        print("point")
+        
+        for data, _ in train_loader:
+            for i in data:
+                images.show_numpy(i, "wow", block=True)
             if i in args.schedule:
                 lr = 0.1 * lr
-
+                
+            data = data.cuda()
+            # images.show_batch_data(data, "wow", block=True)
+            print('point')
+            input()
             train_targets = torch.tensor(
                 [args.target_class]).repeat(args.batch_size).cuda()
-            data = data.cuda()
-            images.show_batch_data(data, "wow", block=True)
 
             patch.detach_()
             patch.requires_grad = True

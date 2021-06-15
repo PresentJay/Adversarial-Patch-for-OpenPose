@@ -184,7 +184,7 @@ print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
 
 #파일 쓰기
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('results/openpose_result/output.mp4', fourcc, fps, (int(frame_width),int(frame_height)))
+out = cv2.VideoWriter('results/openpose_result/output3.mp4', fourcc, fps, (int(frame_width),int(frame_height)))
 
 total = 0
 count = 0

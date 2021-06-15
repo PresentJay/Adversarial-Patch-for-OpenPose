@@ -4,7 +4,7 @@ import math
 import os
 import pickle
 import json
-
+from PIL import Image
 import cv2
 import numpy as np
 import pycocotools
@@ -40,7 +40,7 @@ class CocoTrainDataset(Dataset): # COCO train dataset을 불러오는 클래스
     def __getitem__(self, idx): # 원하는 index의 데이터를 return  
         label = copy.deepcopy(self._labels[idx])  # label modified in transform
         image = cv2.imread(os.path.join(self._images_folder+label['img_paths']), cv2.IMREAD_COLOR)
-        print(label['img_paths'])
+        # print(label['img_paths'])
         mask = np.ones(shape=(label['img_height'], label['img_width']), dtype=np.float32)
         mask = get_mask(label['segmentations'], mask)
 
@@ -51,7 +51,7 @@ class CocoTrainDataset(Dataset): # COCO train dataset을 불러오는 클래스
         }
 
         if self._transform:
-            sample = self._transform(sample)
+            sample['image'] = self._transform(Image.fromarray(sample['image']))
 
         mask = cv2.resize(sample['mask'], dsize=None, fx=1/self._stride, fy=1/self._stride, interpolation=cv2.INTER_AREA)
         keypoint_maps = self._generate_keypoint_maps(sample)
@@ -77,7 +77,7 @@ class CocoTrainDataset(Dataset): # COCO train dataset을 불러오는 클래스
         return len(self._labels)
 
     def _generate_keypoint_maps(self, sample):
-        n_keypoints = 18
+        n_keypoints = 17
         n_rows, n_cols, _ = sample['image'].shape
         keypoint_maps = np.zeros(shape=(n_keypoints + 1,
                                         n_rows // self._stride, n_cols // self._stride), dtype=np.float32)  # +1 for bg
